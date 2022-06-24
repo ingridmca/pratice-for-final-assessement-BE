@@ -1,30 +1,53 @@
-//Router file example
-
-//Remember to import the the Router from express, and to import the models!!
-
 const { Router } = require("express");
+const bcrypt = require("bcrypt");
+const { toJWT } = require("../auth/jwt");
+const authMiddleware = require("../auth/middleware");
 const Story = require("../models").story;
 const Space = require("../models").space;
 const User = require("../models").user;
 
-// create a router that is the sabe as app that we have in index.js
-
 const router = new Router();
 
-//Write how many and any kind of route that you might need!
-
-router.get("/", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const users = await Story.findAll({
-      raw: true,
-      include: { model: Space, include: User },
+    const spaceId = req.params.id;
+
+    const story = await Space.findByPk(spaceId, {
+      include: [{ model: Story }, { model: User }],
     });
-    res.send(users);
+    res.send(story);
   } catch (e) {
     console.log(e.message);
   }
 });
+// //delete a user -> http :4000/users/1
+router.delete("/:storyId", async (req, res, next) => {
+  try {
+    const { storyId } = req.params;
 
-//Export your router!
+    console.log(storyId);
 
+    const storyToDelete = await Story.findByPk(storyId);
+
+    await storyToDelete.destroy();
+
+    res.send("Story deleted ");
+  } catch (e) {
+    console.log(e.message);
+    next(e);
+  }
+});
+
+router.post("/", authMiddleware, async (req, res) => {
+  try {
+    const { name, content, imageUrl } = req.body;
+    const spaceId = req.user.id;
+
+    const newStory = await Story.create({ name, content, imageUrl, spaceId });
+
+    res.status(200).send(newStory);
+  } catch (e) {
+    console.log(e.message);
+  }
+});
 module.exports = router;
