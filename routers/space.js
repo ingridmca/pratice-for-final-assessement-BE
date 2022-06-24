@@ -8,9 +8,11 @@ const router = new Router();
 router.get("/", async (req, res) => {
   try {
     const spaces = await Space.findAll({
-      raw: true,
+      // raw: true,
       include: User,
     });
+
+    console.log(spaces);
     res.send(spaces);
   } catch (e) {
     console.log(e.message);
